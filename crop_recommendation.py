@@ -15,6 +15,7 @@ from data_pipeline import parse_month, geocode, fetch_weather, get_soil_params, 
 from models import build_training_data, train_models, recommend, explain_shap, FEATURES
 from advisor import rotation_advice, climate_risk, fertilizer_gap, crop_calendar, predict_yield, water_requirement, pest_disease_risk
 from market import profit_estimate
+from write_csv import write_result, summarize_results
 
 RISK_COLOR = {"low": "#2ecc71", "medium": "#f39c12", "high": "#e74c3c"}
 RISK_ICON  = {"low": "[OK]", "medium": "[!!]", "high": "[XX]"}
@@ -387,6 +388,17 @@ def main():
                              model_accuracies, shap_vals, risk, fert, rotation, cal,
                              yield_info, water_info, pests, profit)
 
+            # ── Save result to CSV ────────────────────────────────────────────
+            csv_path = write_result(
+                location=location_input, month_name=month_name, season=season,
+                lat=lat, lon=lon, N=N, P=P, K=K, ph=ph,
+                weather=weather, recs=recs, yield_info=yield_info,
+                water_info=water_info, risk=risk, profit=profit,
+                rotation=rotation, fert_gap=fert,
+                previous_crop=previous_crop,
+            )
+            print(f"  Result saved to: {csv_path}")
+
         except ValueError as e:
             print(f"\n  [Error] {e}")
         except Exception as e:
@@ -394,6 +406,14 @@ def main():
             import traceback; traceback.print_exc()
 
         if input("\n  Try another location? (y/n) : ").strip().lower() != "y":
+            summary = summarize_results()
+            if summary.get("total", 0) > 0:
+                print(f"\n  Session summary: {summary['total']} total runs saved.")
+                if summary.get("top_crops"):
+                    top = summary["top_crops"][0]
+                    print(f"  Most recommended crop: {top[0]} ({top[1]} times)")
+                if summary.get("avg_profit_usd") is not None:
+                    print(f"  Average net profit: ${summary['avg_profit_usd']}")
             print("\n  Goodbye!\n"); break
 
 if __name__ == "__main__":

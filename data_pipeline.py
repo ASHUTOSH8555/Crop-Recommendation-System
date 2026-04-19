@@ -3,11 +3,33 @@ data_pipeline.py
 Handles: geocoding, real weather fetch, soil nutrient mapping
 """
 
+import json
+import os
 import requests
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 from geopy.geocoders import Nominatim
+
+_WEATHER_CACHE_FILE = os.path.join(os.path.dirname(__file__), ".weather_cache.json")
+
+def _load_weather_cache() -> dict:
+    if os.path.isfile(_WEATHER_CACHE_FILE):
+        try:
+            with open(_WEATHER_CACHE_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def _save_weather_cache(cache: dict):
+    try:
+        with open(_WEATHER_CACHE_FILE, "w") as f:
+            json.dump(cache, f)
+    except Exception:
+        pass
+
+_weather_cache = _load_weather_cache()
 
 # ── Month / Season helpers ────────────────────────────────────────────────────
 
@@ -197,7 +219,14 @@ def geocode(location: str) -> tuple:
 # ── Weather ───────────────────────────────────────────────────────────────────
 
 def fetch_weather(lat: float, lon: float, month: int) -> dict:
-    """Fetch 10-year historical climate normals from Open-Meteo archive."""
+    """Fetch 10-year historical climate normals from Open-Meteo archive.
+    Results are cached on disk to avoid redundant API calls."""
+    cache_key = f"{round(lat,3)},{round(lon,3)},{month}"
+    if cache_key in _weather_cache:
+        cached = dict(_weather_cache[cache_key])
+        cached["source"] = cached.get("source", "Open-Meteo archive") + " [cached]"
+        return cached
+
     url = "https://archive-api.open-meteo.com/v1/archive"
     params = {
         "latitude":   lat,
@@ -224,8 +253,7 @@ def fetch_weather(lat: float, lon: float, month: int) -> dict:
                 if i < len(humids) and humids[i] is not None: h_vals.append(humids[i])
 
         if t_vals:
-            # Also compute variance for risk scoring
-            return {
+            result = {
                 "temperature":      round(float(np.mean(t_vals)), 2),
                 "temp_std":         round(float(np.std(t_vals)), 2),
                 "rainfall":         round(float(np.sum(r_vals) / 10), 2),
@@ -233,6 +261,9 @@ def fetch_weather(lat: float, lon: float, month: int) -> dict:
                 "humidity":         round(float(np.mean(h_vals)), 2),
                 "source":           "Open-Meteo archive (2013-2023)",
             }
+            _weather_cache[cache_key] = result
+            _save_weather_cache(_weather_cache)
+            return result
     except Exception as e:
         print(f"  [weather] {e} — using seasonal estimate.")
     return _fallback_weather(month)

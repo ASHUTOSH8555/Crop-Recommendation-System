@@ -8,31 +8,41 @@ import numpy as np
 from models import CROP_NUTRIENT_NEEDS, CROP_PROFILES
 
 # ── Crop rotation rules ───────────────────────────────────────────────────────
-# Maps previous crop → list of good follow-up crops (nutrient balance logic)
 
 ROTATION_RULES = {
-    "Rice":       ["Wheat","Mustard","Lentil","Chickpea","Potato"],
-    "Wheat":      ["Rice","Soybean","Chickpea","Lentil","Sunflower"],
-    "Maize":      ["Soybean","Groundnut","Chickpea","Wheat","Potato"],
-    "Cotton":     ["Wheat","Chickpea","Soybean","Mustard","Lentil"],
-    "Sugarcane":  ["Wheat","Mustard","Onion","Garlic","Potato"],
-    "Soybean":    ["Wheat","Maize","Cotton","Sunflower","Rice"],
-    "Groundnut":  ["Wheat","Maize","Cotton","Sorghum","Rice"],
-    "Chickpea":   ["Wheat","Maize","Cotton","Rice","Sunflower"],
-    "Lentil":     ["Wheat","Maize","Rice","Cotton","Sunflower"],
-    "Potato":     ["Wheat","Maize","Soybean","Mustard","Onion"],
-    "Tomato":     ["Onion","Garlic","Maize","Wheat","Mustard"],
-    "Onion":      ["Tomato","Maize","Wheat","Soybean","Rice"],
-    "Garlic":     ["Tomato","Maize","Wheat","Soybean","Rice"],
-    "Mustard":    ["Rice","Maize","Soybean","Chickpea","Wheat"],
-    "Sunflower":  ["Wheat","Maize","Soybean","Chickpea","Rice"],
-    "Banana":     ["Sugarcane","Rice","Maize","Groundnut","Soybean"],
-    "Coffee":     ["Banana","Maize","Soybean","Rice","Tea"],
-    "Tea":        ["Coffee","Maize","Soybean","Rice","Banana"],
-    "Jute":       ["Rice","Wheat","Mustard","Lentil","Chickpea"],
-    "Mango":      ["Groundnut","Soybean","Maize","Wheat","Rice"],
-    "Grapes":     ["Wheat","Mustard","Onion","Garlic","Chickpea"],
-    "Watermelon": ["Wheat","Maize","Onion","Garlic","Mustard"],
+    "Rice":        ["Wheat","Mustard","Lentil","Chickpea","Potato"],
+    "Wheat":       ["Rice","Soybean","Chickpea","Lentil","Sunflower"],
+    "Maize":       ["Soybean","Groundnut","Chickpea","Wheat","Potato"],
+    "Cotton":      ["Wheat","Chickpea","Soybean","Mustard","Lentil"],
+    "Sugarcane":   ["Wheat","Mustard","Onion","Garlic","Potato"],
+    "Soybean":     ["Wheat","Maize","Cotton","Sunflower","Rice"],
+    "Groundnut":   ["Wheat","Maize","Cotton","Rice"],
+    "Chickpea":    ["Wheat","Maize","Cotton","Rice","Sunflower"],
+    "Lentil":      ["Wheat","Maize","Rice","Cotton","Sunflower"],
+    "Kidneybeans": ["Maize","Wheat","Rice","Soybean","Mustard"],
+    "Pigeonpeas":  ["Wheat","Maize","Rice","Sorghum","Mustard"],
+    "Mothbeans":   ["Wheat","Maize","Mustard","Chickpea","Sorghum"],
+    "Mungbean":    ["Wheat","Maize","Rice","Mustard","Chickpea"],
+    "Blackgram":   ["Wheat","Maize","Rice","Mustard","Chickpea"],
+    "Potato":      ["Wheat","Maize","Soybean","Mustard","Onion"],
+    "Tomato":      ["Onion","Garlic","Maize","Wheat","Mustard"],
+    "Onion":       ["Tomato","Maize","Wheat","Soybean","Rice"],
+    "Garlic":      ["Tomato","Maize","Wheat","Soybean","Rice"],
+    "Mustard":     ["Rice","Maize","Soybean","Chickpea","Wheat"],
+    "Sunflower":   ["Wheat","Maize","Soybean","Chickpea","Rice"],
+    "Banana":      ["Sugarcane","Rice","Maize","Groundnut","Soybean"],
+    "Mango":       ["Groundnut","Soybean","Maize","Wheat","Rice"],
+    "Grapes":      ["Wheat","Mustard","Onion","Garlic","Chickpea"],
+    "Watermelon":  ["Wheat","Maize","Onion","Garlic","Mustard"],
+    "Muskmelon":   ["Wheat","Maize","Onion","Garlic","Mustard"],
+    "Apple":       ["Wheat","Mustard","Onion","Garlic","Chickpea"],
+    "Orange":      ["Groundnut","Soybean","Maize","Wheat","Rice"],
+    "Pomegranate": ["Groundnut","Soybean","Maize","Wheat","Rice"],
+    "Papaya":      ["Maize","Soybean","Rice","Groundnut","Mustard"],
+    "Coconut":     ["Banana","Rice","Maize","Groundnut","Soybean"],
+    "Coffee":      ["Banana","Maize","Soybean","Rice","Tea"],
+    "Tea":         ["Coffee","Maize","Soybean","Rice","Banana"],
+    "Jute":        ["Rice","Wheat","Mustard","Lentil","Chickpea"],
 }
 
 def rotation_advice(previous_crop: str, recommendations: list) -> dict:
@@ -177,12 +187,20 @@ from sklearn.model_selection import train_test_split as _tts
 
 # Baseline yield (ton/ha) per crop under ideal conditions
 BASELINE_YIELD = {
-    "Rice": 4.5,   "Wheat": 3.5,   "Maize": 5.5,   "Chickpea": 1.2,
-    "Lentil": 1.0, "Cotton": 1.8,  "Sugarcane": 65, "Soybean": 2.5,
-    "Groundnut": 2.0, "Sunflower": 1.8, "Banana": 35, "Mango": 8.0,
-    "Coffee": 1.5, "Tea": 2.2,     "Jute": 2.5,    "Mustard": 1.5,
-    "Potato": 22,  "Tomato": 25,   "Onion": 18,    "Garlic": 8.0,
-    "Watermelon": 30, "Grapes": 12,
+    # CSV crops
+    "Rice": 4.5,       "Maize": 5.5,       "Chickpea": 1.2,
+    "Kidneybeans": 1.5,"Pigeonpeas": 1.0,  "Mothbeans": 0.8,
+    "Mungbean": 1.0,   "Blackgram": 0.9,   "Lentil": 1.0,
+    "Pomegranate": 12, "Banana": 35,        "Mango": 8.0,
+    "Grapes": 12,      "Watermelon": 30,    "Muskmelon": 20,
+    "Apple": 15,       "Orange": 18,        "Papaya": 40,
+    "Coconut": 15,     "Cotton": 1.8,       "Jute": 2.5,
+    "Coffee": 1.5,
+    # Extra crops
+    "Wheat": 3.5,      "Sugarcane": 65,     "Soybean": 2.5,
+    "Groundnut": 2.0,  "Sunflower": 1.8,    "Tea": 2.2,
+    "Mustard": 1.5,    "Potato": 22,        "Tomato": 25,
+    "Onion": 18,       "Garlic": 8.0,
 }
 
 def _build_yield_model():
@@ -242,12 +260,20 @@ def predict_yield(crop: str, N, P, K, temp, humidity, ph, rainfall) -> dict:
 
 # Crop evapotranspiration (ET) in mm/month under standard conditions
 CROP_ET_MM_MONTH = {
-    "Rice": 200,  "Wheat": 120,  "Maize": 150,  "Chickpea": 90,
-    "Lentil": 80, "Cotton": 160, "Sugarcane": 180, "Soybean": 130,
-    "Groundnut": 120, "Sunflower": 140, "Banana": 170, "Mango": 100,
-    "Coffee": 130, "Tea": 150,   "Jute": 160,   "Mustard": 100,
-    "Potato": 130, "Tomato": 140, "Onion": 110, "Garlic": 100,
-    "Watermelon": 150, "Grapes": 110,
+    # CSV crops
+    "Rice": 200,       "Maize": 150,       "Chickpea": 90,
+    "Kidneybeans": 100,"Pigeonpeas": 110,  "Mothbeans": 80,
+    "Mungbean": 90,    "Blackgram": 90,    "Lentil": 80,
+    "Pomegranate": 100,"Banana": 170,      "Mango": 100,
+    "Grapes": 110,     "Watermelon": 150,  "Muskmelon": 140,
+    "Apple": 120,      "Orange": 110,      "Papaya": 160,
+    "Coconut": 130,    "Cotton": 160,      "Jute": 160,
+    "Coffee": 130,
+    # Extra crops
+    "Wheat": 120,      "Sugarcane": 180,   "Soybean": 130,
+    "Groundnut": 120,  "Sunflower": 140,   "Tea": 150,
+    "Mustard": 100,    "Potato": 130,      "Tomato": 140,
+    "Onion": 110,      "Garlic": 100,
 }
 
 def water_requirement(crop: str, rainfall_mm: float) -> dict:
@@ -318,6 +344,95 @@ PEST_RULES = {
         (25, 35, 70, "Red Rot",                 "high"),
         (20, 32, 65, "Pyrilla (leafhopper)",    "medium"),
         (22, 30, 75, "Smut",                    "medium"),
+    ],
+    "Chickpea": [
+        (15, 25, 60, "Helicoverpa Pod Borer",   "high"),
+        (10, 22, 55, "Fusarium Wilt",           "medium"),
+        (12, 20, 50, "Aphids",                  "low"),
+    ],
+    "Kidneybeans": [
+        (18, 28, 65, "Bean Fly",                "high"),
+        (15, 25, 60, "Angular Leaf Spot",       "medium"),
+        (20, 30, 70, "Aphids",                  "medium"),
+    ],
+    "Pigeonpeas": [
+        (25, 37, 55, "Helicoverpa Pod Borer",   "high"),
+        (20, 32, 50, "Fusarium Wilt",           "medium"),
+        (22, 35, 45, "Sterility Mosaic Virus",  "medium"),
+    ],
+    "Mothbeans": [
+        (25, 32, 50, "Aphids",                  "medium"),
+        (22, 30, 45, "Leaf Spot",               "low"),
+    ],
+    "Mungbean": [
+        (25, 30, 80, "Yellow Mosaic Virus",     "high"),
+        (22, 30, 75, "Powdery Mildew",          "medium"),
+        (20, 28, 70, "Aphids",                  "medium"),
+    ],
+    "Blackgram": [
+        (25, 35, 60, "Yellow Mosaic Virus",     "high"),
+        (22, 32, 65, "Leaf Crinkle",            "medium"),
+        (20, 30, 60, "Aphids",                  "medium"),
+    ],
+    "Lentil": [
+        (18, 30, 60, "Stemphylium Blight",      "high"),
+        (15, 25, 55, "Fusarium Wilt",           "medium"),
+        (12, 22, 50, "Aphids",                  "low"),
+    ],
+    "Pomegranate": [
+        (18, 25, 85, "Bacterial Blight",        "high"),
+        (20, 28, 80, "Fruit Borer",             "medium"),
+        (15, 25, 75, "Aphids",                  "low"),
+    ],
+    "Mango": [
+        (25, 36, 50, "Mango Hopper",            "high"),
+        (22, 35, 45, "Anthracnose",             "medium"),
+        (20, 32, 40, "Powdery Mildew",          "medium"),
+    ],
+    "Grapes": [
+        (8,  42, 80, "Downy Mildew",            "high"),
+        (10, 35, 75, "Powdery Mildew",          "high"),
+        (15, 30, 70, "Grape Berry Moth",        "medium"),
+    ],
+    "Watermelon": [
+        (24, 27, 80, "Downy Mildew",            "high"),
+        (22, 30, 75, "Aphids / Mosaic Virus",   "medium"),
+        (20, 28, 70, "Fusarium Wilt",           "medium"),
+    ],
+    "Muskmelon": [
+        (27, 30, 90, "Powdery Mildew",          "high"),
+        (25, 32, 85, "Aphids / Mosaic Virus",   "medium"),
+        (22, 30, 80, "Downy Mildew",            "medium"),
+    ],
+    "Apple": [
+        (21, 24, 90, "Apple Scab",              "high"),
+        (18, 25, 85, "Fire Blight",             "high"),
+        (15, 22, 80, "Codling Moth",            "medium"),
+    ],
+    "Orange": [
+        (10, 35, 90, "Citrus Canker",           "high"),
+        (15, 30, 85, "Citrus Psylla",           "medium"),
+        (12, 28, 80, "Greening Disease",        "high"),
+    ],
+    "Papaya": [
+        (23, 43, 90, "Papaya Ring Spot Virus",  "high"),
+        (25, 40, 85, "Mealybugs",               "medium"),
+        (20, 35, 80, "Powdery Mildew",          "medium"),
+    ],
+    "Coconut": [
+        (25, 30, 90, "Rhinoceros Beetle",       "high"),
+        (22, 30, 85, "Red Palm Weevil",         "high"),
+        (20, 28, 80, "Bud Rot",                 "medium"),
+    ],
+    "Jute": [
+        (23, 27, 70, "Stem Rot",                "high"),
+        (20, 30, 65, "Jute Semilooper",         "medium"),
+        (22, 28, 75, "Leaf Spot",               "medium"),
+    ],
+    "Coffee": [
+        (23, 28, 55, "Coffee Berry Borer",      "high"),
+        (20, 28, 50, "Coffee Leaf Rust",        "high"),
+        (18, 26, 45, "Mealybugs",               "medium"),
     ],
 }
 

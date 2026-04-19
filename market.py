@@ -8,14 +8,20 @@ import requests
 
 # ── Fallback price table (USD per ton, approximate global averages) ───────────
 FALLBACK_PRICES_USD_TON = {
-    "Rice":       420,  "Wheat":      220,  "Maize":      200,
-    "Chickpea":   800,  "Lentil":     700,  "Cotton":    1600,
-    "Sugarcane":   35,  "Soybean":    480,  "Groundnut":  900,
-    "Sunflower":  450,  "Banana":     300,  "Mango":      600,
-    "Coffee":    2800,  "Tea":        2500, "Jute":       350,
-    "Mustard":    550,  "Potato":     200,  "Tomato":     350,
-    "Onion":      250,  "Garlic":    1200,  "Watermelon": 180,
-    "Grapes":     900,
+    # CSV crops (22)
+    "Rice": 420,       "Maize": 200,       "Chickpea": 800,
+    "Kidneybeans": 900,"Pigeonpeas": 750,  "Mothbeans": 700,
+    "Mungbean": 850,   "Blackgram": 800,   "Lentil": 700,
+    "Pomegranate": 900,"Banana": 300,      "Mango": 600,
+    "Grapes": 900,     "Watermelon": 180,  "Muskmelon": 250,
+    "Apple": 700,      "Orange": 400,      "Papaya": 350,
+    "Coconut": 280,    "Cotton": 1600,     "Jute": 350,
+    "Coffee": 2800,
+    # Extra crops
+    "Wheat": 220,      "Sugarcane": 35,    "Soybean": 480,
+    "Groundnut": 900,  "Sunflower": 450,   "Tea": 2500,
+    "Mustard": 550,    "Potato": 200,      "Tomato": 350,
+    "Onion": 250,      "Garlic": 1200,
 }
 
 def fetch_market_price(crop: str) -> dict:
@@ -75,10 +81,20 @@ def profit_estimate(crop: str, yield_ton_ha: float, area_ha: float = 1.0) -> dic
 
     # Rough production cost estimates (USD/ha) — agronomic averages
     COST_PER_HA = {
-        "Rice": 400, "Wheat": 300, "Maize": 350, "Cotton": 600,
-        "Sugarcane": 500, "Soybean": 280, "Groundnut": 350,
-        "Potato": 800, "Tomato": 700, "Onion": 500, "Garlic": 600,
-        "Banana": 900, "Coffee": 1200, "Tea": 1000,
+        # CSV crops
+        "Rice": 400,       "Maize": 350,       "Chickpea": 250,
+        "Kidneybeans": 300,"Pigeonpeas": 250,  "Mothbeans": 200,
+        "Mungbean": 250,   "Blackgram": 250,   "Lentil": 220,
+        "Pomegranate": 800,"Banana": 900,      "Mango": 600,
+        "Grapes": 1200,    "Watermelon": 400,  "Muskmelon": 380,
+        "Apple": 1000,     "Orange": 700,      "Papaya": 500,
+        "Coconut": 400,    "Cotton": 600,      "Jute": 300,
+        "Coffee": 1200,
+        # Extra crops
+        "Wheat": 300,      "Sugarcane": 500,   "Soybean": 280,
+        "Groundnut": 350,  "Sunflower": 300,   "Tea": 1000,
+        "Mustard": 250,    "Potato": 800,      "Tomato": 700,
+        "Onion": 500,      "Garlic": 600,
     }
     cost       = COST_PER_HA.get(crop, 400) * area_ha
     net_profit = round(gross_revenue - cost, 2)
