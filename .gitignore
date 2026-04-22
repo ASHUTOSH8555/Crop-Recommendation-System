@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Model cache (auto-generated on first run)
+.model_cache.pkl
+.model_cache.pkl.nn.pt
+.data_hash.txt
+
+# Weather cache (auto-generated from API)
+.weather_cache.json
+
+# Results CSV (runtime output)
+recommendation_results.csv
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

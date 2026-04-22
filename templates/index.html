@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 EasyFarm – AI Crop Recommendation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e;--card:#111827;--card2:#1a2235;
+  --green:#22c55e;--green-dim:rgba(34,197,94,.15);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,.15);
+  --orange:#f59e0b;--orange-dim:rgba(245,158,11,.15);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.15);
+  --text:#f1f5f9;--muted:#94a3b8;--border:#1e293b;
+  --radius:12px;--radius-sm:8px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+
+/* NAVBAR */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,15,30,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 2rem;
+}
+.nav-logo{font-size:1.4rem;font-weight:800;color:var(--green);letter-spacing:-.5px}
+.nav-tagline{font-size:.8rem;color:var(--muted);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+
+/* HERO */
+.hero{
+  background:linear-gradient(135deg,#0d2818 0%,#0a1628 50%,#0d1b2a 100%);
+  padding:5rem 2rem 3rem;text-align:center;
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(34,197,94,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1rem;
+  background:linear-gradient(135deg,#fff 30%,var(--green));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.05rem;color:var(--muted);max-width:620px;margin:0 auto 2.5rem}
+
+/* FORM CARD */
+.form-wrap{max-width:700px;margin:0 auto;padding:0 1rem}
+.form-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:2rem;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:.4rem}
+.form-group label{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.form-group input{
+  background:#0d1526;border:1px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--text);padding:.75rem 1rem;font-size:.95rem;font-family:inherit;
+  transition:border-color .2s,box-shadow .2s;outline:none;
+}
+.form-group input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.form-group input::placeholder{color:#4a5568}
+.checkbox-row{display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;cursor:pointer}
+.checkbox-row input[type=checkbox]{
+  width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0
+}
+.checkbox-row span{font-size:.9rem;color:var(--muted)}
+.btn-submit{
+  width:100%;padding:.9rem;font-size:1rem;font-weight:700;
+  background:linear-gradient(135deg,var(--green),#16a34a);
+  color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;
+  transition:transform .15s,box-shadow .15s,opacity .15s;
+  letter-spacing:.3px;
+}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(34,197,94,.35)}
+.btn-submit:active{transform:translateY(0)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* STATS BAR */
+#stats-bar{
+  display:none;background:var(--card);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:1rem 2rem;
+}
+.stats-inner{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-val{font-size:1.5rem;font-weight:800;color:var(--green)}
+.stat-lbl{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+/* ERROR */
+#error-box{
+  display:none;max-width:700px;margin:1.5rem auto;padding:1rem 1.25rem;
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);
+  border-radius:var(--radius-sm);color:#fca5a5;font-size:.9rem;
+}
+
+/* SPINNER */
+#spinner{
+  display:none;text-align:center;padding:3rem 1rem;
+}
+.spin-ring{
+  width:52px;height:52px;border:4px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 1rem;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#spin-msg{color:var(--muted);font-size:.9rem}
+
+/* RESULTS */
+#results{display:none;padding:2rem 1rem 4rem;max-width:1200px;margin:0 auto}
+
+/* META BAR */
+.meta-bar{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem}
+.pill{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.3rem .75rem;border-radius:999px;font-size:.78rem;font-weight:600;
+  background:var(--card2);border:1px solid var(--border);color:var(--muted);
+}
+.pill span.icon{font-size:.9rem}
+
+/* SECTION TITLES */
+.section-title{
+  font-size:1.1rem;font-weight:700;color:var(--text);
+  margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;
+}
+.section-title::after{
+  content:'';flex:1;height:1px;background:var(--border);margin-left:.5rem
+}
+
+/* TOP 5 RECS */
+.recs-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2.5rem}
+@media(max-width:900px){.recs-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.recs-grid{grid-template-columns:repeat(2,1fr)}}
+.rec-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.25rem 1rem;text-align:center;
+  animation:fadeUp .4s ease both;
+}
+.rec-card.top-pick{border-color:var(--green);box-shadow:0 0 20px rgba(34,197,94,.2)}
+.rec-rank{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem}
+.rec-crop{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:.75rem}
+.rec-pct{font-size:2rem;font-weight:800;color:var(--green);line-height:1}
+.rec-pct-lbl{font-size:.7rem;color:var(--muted);margin-bottom:.75rem}
+.prog-bar{height:5px;background:var(--border);border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),#16a34a);border-radius:999px;transition:width 1s ease}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:1100px){.info-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.info-grid{grid-template-columns:1fr}}
+.info-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.25rem;animation:fadeUp .5s ease both;
+}
+.info-card-title{
+  font-size:.75rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:1rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.info-row:last-child{border-bottom:none}
+.info-lbl{font-size:.82rem;color:var(--muted)}
+.info-val{font-size:.88rem;font-weight:600;color:var(--text)}
+.big-num{font-size:2rem;font-weight:800;color:var(--green);line-height:1;margin-bottom:.25rem}
+.big-num.profit-pos{color:var(--green)}
+.big-num.profit-neg{color:var(--red)}
+
+/* BADGES */
+.badge{
+  display:inline-block;padding:.2rem .6rem;border-radius:999px;
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+}
+.badge-green{background:var(--green-dim);color:var(--green)}
+.badge-blue{background:var(--blue-dim);color:var(--blue)}
+.badge-orange{background:var(--orange-dim);color:var(--orange)}
+.badge-red{background:var(--red-dim);color:var(--red)}
+
+/* FERTILIZER TABLE */
+.fert-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.5rem;margin-bottom:2rem;animation:fadeUp .6s ease both;
+}
+.fert-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.fert-table th{
+  text-align:left;padding:.6rem .75rem;
+  background:rgba(255,255,255,.04);color:var(--muted);
+  font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  border-bottom:1px solid var(--border);
+}
+.fert-table td{padding:.65rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+.fert-table tr:last-child td{border-bottom:none}
+.fert-table tr:hover td{background:rgba(255,255,255,.02)}
+
+/* REPORT IMAGE */
+.report-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.5rem;margin-bottom:2rem;animation:fadeUp .7s ease both;
+}
+.report-card img{width:100%;border-radius:var(--radius-sm);display:block}
+
+/* PEST CARD */
+.pest-item{
+  display:flex;align-items:flex-start;gap:.75rem;
+  padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.pest-item:last-child{border-bottom:none}
+.pest-sev{flex-shrink:0;margin-top:.1rem}
+.pest-name{font-size:.88rem;font-weight:600;color:var(--text)}
+.pest-reason{font-size:.78rem;color:var(--muted);margin-top:.15rem}
+
+/* ROTATION CARD */
+.rot-note{font-size:.85rem;color:var(--muted);margin-bottom:.75rem;font-style:italic}
+.rot-group{margin-bottom:.5rem}
+.rot-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem}
+.rot-crops{display:flex;flex-wrap:wrap;gap:.4rem}
+
+/* ANIMATIONS */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.rec-card:nth-child(1){animation-delay:.05s}
+.rec-card:nth-child(2){animation-delay:.1s}
+.rec-card:nth-child(3){animation-delay:.15s}
+.rec-card:nth-child(4){animation-delay:.2s}
+.rec-card:nth-child(5){animation-delay:.25s}
+
+/* FOOTER */
+footer{
+  text-align:center;padding:1.5rem;
+  border-top:1px solid var(--border);
+  color:var(--muted);font-size:.82rem;
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">🌿 EasyFarm</div>
+  <div class="nav-tagline">AI-Powered Crop Intelligence</div>
+</nav>
+
+<!-- HERO + FORM -->
+<section class="hero">
+  <h1>Smart Farming Starts Here</h1>
+  <p>Enter your location and month to get ML-powered crop recommendations, yield predictions, market prices and more.</p>
+  <div class="form-wrap">
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inp-location">📍 Location</label>
+          <input id="inp-location" type="text" placeholder="City, State or Country e.g. Lucknow, Punjab…" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="inp-month">📅 Month / Season</label>
+          <input id="inp-month" type="text" placeholder="Month or Season e.g. March, Kharif, Winter…" autocomplete="off">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:1rem">
+        <label for="inp-prev">🌾 Previous Crop</label>
+        <input id="inp-prev" type="text" placeholder="Optional: e.g. Wheat" autocomplete="off">
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-calendar">
+        <span>📆 Generate 12-month crop calendar <em style="color:#64748b">(takes ~30s)</em></span>
+      </label>
+      <button class="btn-submit" id="btn-submit" onclick="submitForm()">🔍 Get Recommendation</button>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div id="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-val" id="stat-runs">0</div>
+      <div class="stat-lbl">Total Runs</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-crop" style="font-size:1.1rem">—</div>
+      <div class="stat-lbl">Top Crop</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-profit">$0</div>
+      <div class="stat-lbl">Avg Net Profit</div>
+    </div>
+  </div>
+</div>
+
+<!-- ERROR BOX -->
+<div id="error-box"></div>
+
+<!-- SPINNER -->
+<div id="spinner">
+  <div class="spin-ring"></div>
+  <div id="spin-msg">Fetching weather &amp; soil data…</div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <!-- META BAR -->
+  <div class="meta-bar" id="meta-bar"></div>
+
+  <!-- TOP 5 RECOMMENDATIONS -->
+  <div class="section-title">🏆 Top 5 Crop Recommendations</div>
+  <div class="recs-grid" id="recs-grid"></div>
+
+  <!-- INFO GRID -->
+  <div class="section-title">📊 Detailed Analysis</div>
+  <div class="info-grid" id="info-grid"></div>
+
+  <!-- FERTILIZER TABLE -->
+  <div class="section-title">🧪 Fertilizer Recommendations</div>
+  <div class="fert-card" id="fert-card"></div>
+
+  <!-- FULL REPORT IMAGE -->
+  <div class="section-title">📈 Full ML Report</div>
+  <div class="report-card" id="report-card"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>EasyFarm &copy; 2025 &nbsp;|&nbsp; Powered by ML + Real-time Weather Data</footer>
+
+<script>
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function badge(text, level) {
+  const map = {
+    low: 'badge-green', medium: 'badge-orange', high: 'badge-red',
+    excellent: 'badge-green', good: 'badge-blue', moderate: 'badge-orange', poor: 'badge-red',
+    add: 'badge-orange', excess: 'badge-red', ok: 'badge-green',
+    'rainfall sufficient': 'badge-green', 'moderate irrigation needed': 'badge-orange',
+    'high irrigation needed': 'badge-red', 'drainage may be needed': 'badge-blue',
+  };
+  const cls = map[String(level).toLowerCase()] || 'badge-blue';
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+
+function card(title, icon, bodyHtml) {
+  return `<div class="info-card">
+    <div class="info-card-title">${icon} ${title}</div>
+    ${bodyHtml}
+  </div>`;
+}
+
+function infoRow(label, value) {
+  return `<div class="info-row"><span class="info-lbl">${label}</span><span class="info-val">${value}</span></div>`;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function showSpinner(msg) {
+  document.getElementById('spin-msg').textContent = msg || 'Processing…';
+  document.getElementById('spinner').style.display = 'block';
+}
+
+function hideSpinner() {
+  document.getElementById('spinner').style.display = 'none';
+}
+
+function updateSpinMsg(msg) {
+  document.getElementById('spin-msg').textContent = msg;
+}
+
+// ─── Summary ──────────────────────────────────────────────────────────────────
+
+async function loadSummary() {
+  try {
+    const res = await fetch('/summary');
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d || (d.total_runs || 0) === 0) return;
+    document.getElementById('stat-runs').textContent = d.total_runs || 0;
+    document.getElementById('stat-crop').textContent = d.top_crop || '—';
+    document.getElementById('stat-profit').textContent = d.avg_net_profit != null ? '$' + Number(d.avg_net_profit).toFixed(0) : '—';
+    document.getElementById('stats-bar').style.display = 'block';
+  } catch (e) { /* silent */ }
+}
+
+// ─── Submit ───────────────────────────────────────────────────────────────────
+
+async function submitForm() {
+  const location = document.getElementById('inp-location').value.trim();
+  const month    = document.getElementById('inp-month').value.trim();
+  const prev     = document.getElementById('inp-prev').value.trim();
+  const calendar = document.getElementById('chk-calendar').checked;
+
+  hideError();
+  document.getElementById('results').style.display = 'none';
+
+  if (!location) { showError('Please enter a location.'); return; }
+  if (!month)    { showError('Please enter a month or season.'); return; }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+
+  showSpinner('Geocoding location…');
+
+  const spinMsgs = [
+    'Fetching real-time weather data…',
+    'Retrieving soil parameters…',
+    'Running ML models…',
+    'Calculating yield predictions…',
+    'Estimating profit & market prices…',
+    'Analysing climate risks…',
+    calendar ? 'Generating 12-month calendar (this takes ~30s)…' : 'Building full report…',
+  ];
+  let msgIdx = 0;
+  const msgTimer = setInterval(() => {
+    if (msgIdx < spinMsgs.length) updateSpinMsg(spinMsgs[msgIdx++]);
+  }, 2200);
+
+  try {
+    const res = await fetch('/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location, month, previous_crop: prev, calendar }),
+    });
+    const data = await res.json();
+    clearInterval(msgTimer);
+    hideSpinner();
+    btn.disabled = false;
+
+    if (!res.ok || data.error) {
+      showError(data.error || 'Unknown error from server.');
+      return;
+    }
+    renderResults(data);
+    loadSummary();
+  } catch (e) {
+    clearInterval(msgTimer);
+    hideSpinner();
+    btn.disabled = false;
+    showError('Network error: ' + e.message);
+  }
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+
+function renderResults(data) {
+  // META BAR
+  const meta = document.getElementById('meta-bar');
+  meta.innerHTML = [
+    `<span class="pill"><span class="icon">📍</span>${data.location || ''}</span>`,
+    `<span class="pill"><span class="icon">📅</span>${data.month || ''}</span>`,
+    `<span class="pill"><span class="icon">🌤</span>${data.season || ''}</span>`,
+    `<span class="pill"><span class="icon">🤖</span>${data.best_model || ''}</span>`,
+    `<span class="pill"><span class="icon">🌐</span>${data.lat}, ${data.lon}</span>`,
+  ].join('');
+
+  // TOP 5 RECS
+  const recsGrid = document.getElementById('recs-grid');
+  recsGrid.innerHTML = '';
+  (data.recs || []).forEach((r, i) => {
+    const isTop = i === 0;
+    const div = document.createElement('div');
+    div.className = 'rec-card' + (isTop ? ' top-pick' : '');
+    div.innerHTML = `
+      <div class="rec-rank">${isTop ? '🥇 Top Pick' : '#' + (i + 1)}</div>
+      <div class="rec-crop">${r.crop}</div>
+      <div class="rec-pct">${r.confidence}</div>
+      <div class="rec-pct-lbl">% confidence</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:0%" data-w="${r.confidence}%"></div></div>
+    `;
+    recsGrid.appendChild(div);
+  });
+  // Animate progress bars after paint
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.prog-fill').forEach(el => {
+      el.style.width = el.dataset.w;
+    });
+  });
+
+  // INFO GRID
+  const infoGrid = document.getElementById('info-grid');
+  infoGrid.innerHTML = '';
+
+  // Weather card
+  const w = data.weather || {};
+  infoGrid.innerHTML += card('Weather', '🌡️',
+    infoRow('Temperature', (w.temperature ?? '—') + ' °C') +
+    infoRow('Humidity', (w.humidity ?? '—') + ' %') +
+    infoRow('Rainfall', (w.rainfall ?? '—') + ' mm/mo') +
+    infoRow('Source', w.source || 'Open-Meteo')
+  );
+
+  // Soil card
+  const s = data.soil || {};
+  infoGrid.innerHTML += card('Soil Parameters', '🌱',
+    infoRow('Nitrogen (N)', s.N ?? '—') +
+    infoRow('Phosphorus (P)', s.P ?? '—') +
+    infoRow('Potassium (K)', s.K ?? '—') +
+    infoRow('pH', s.ph ?? '—')
+  );
+
+  // Yield card
+  const y = data.yield || {};
+  const ratingBadge = badge(y.rating || '—', y.rating || '');
+  infoGrid.innerHTML += card('Yield Prediction', '📦',
+    `<div class="big-num">${y.predicted_ton_ha ?? '—'} <small style="font-size:1rem;color:var(--muted)">ton/ha</small></div>` +
+    `<div style="margin-bottom:.75rem">${ratingBadge}</div>` +
+    infoRow('Baseline', (y.baseline_ton_ha ?? '—') + ' ton/ha') +
+    infoRow('% of Ideal', (y.yield_pct ?? '—') + '%')
+  );
+
+  // Water card
+  const wr = data.water || {};
+  infoGrid.innerHTML += card('Water Requirement', '💧',
+    infoRow('Crop ET Demand', (wr.crop_et_mm ?? '—') + ' mm/mo') +
+    infoRow('Rainfall', (wr.rainfall_mm ?? '—') + ' mm/mo') +
+    infoRow('Deficit', (wr.deficit_mm != null ? (wr.deficit_mm > 0 ? '+' : '') + wr.deficit_mm.toFixed(1) : '—') + ' mm') +
+    `<div style="margin-top:.5rem">${badge(wr.status || '—', wr.status || '')}</div>`
+  );
+
+  // Climate Risk card
+  const risk = data.risk || {};
+  infoGrid.innerHTML += card('Climate Risk', '⚠️',
+    infoRow('Water Stress', badge(risk.water_stress || '—', risk.water_stress || '')) +
+    infoRow('Frost Risk',   badge(risk.frost_risk   || '—', risk.frost_risk   || '')) +
+    infoRow('Heat Stress',  badge(risk.heat_stress  || '—', risk.heat_stress  || '')) +
+    infoRow('Overall',      badge(risk.overall      || '—', risk.overall      || ''))
+  );
+
+  // Profit card
+  const p = data.profit || {};
+  const netCls = p.profitable ? 'profit-pos' : 'profit-neg';
+  infoGrid.innerHTML += card('Profit Estimate', '💰',
+    infoRow('Market Price', '$' + (p.price_usd_ton ?? '—') + '/ton') +
+    infoRow('Gross Revenue', '$' + (p.gross_revenue ?? '—')) +
+    infoRow('Production Cost', '$' + (p.production_cost ?? '—')) +
+    `<div style="margin-top:.5rem"><div class="big-num ${netCls}" style="font-size:1.5rem">$${p.net_profit ?? '—'}</div><div style="font-size:.75rem;color:var(--muted)">Net Profit / ha</div></div>`
+  );
+
+  // Rotation card
+  infoGrid.innerHTML += rotationCard(data.rotation || {});
+
+  // Pest card
+  infoGrid.innerHTML += pestsCard(data.pests || []);
+
+  // FERTILIZER TABLE
+  fertCard(data.fertilizer || {});
+
+  // REPORT IMAGE
+  const rc = document.getElementById('report-card');
+  if (data.report_img) {
+    rc.innerHTML = `<img src="data:image/png;base64,${data.report_img}" alt="Full ML Report">`;
+  } else {
+    rc.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">Report image not available.</p>';
+  }
+
+  // Show results & scroll
+  const resultsEl = document.getElementById('results');
+  resultsEl.style.display = 'block';
+  setTimeout(() => resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ─── Rotation Card ────────────────────────────────────────────────────────────
+
+function rotationCard(rotation) {
+  const good  = rotation.good  || [];
+  const avoid = rotation.avoid || [];
+  const note  = rotation.note  || '';
+  let body = `<div class="rot-note">${note}</div>`;
+  if (good.length) {
+    body += `<div class="rot-group">
+      <div class="rot-label" style="color:var(--green)">✅ Good Rotations</div>
+      <div class="rot-crops">${good.map(c => `<span class="badge badge-green">${c}</span>`).join('')}</div>
+    </div>`;
+  }
+  if (avoid.length) {
+    body += `<div class="rot-group">
+      <div class="rot-label" style="color:var(--red)">🚫 Avoid</div>
+      <div class="rot-crops">${avoid.map(c => `<span class="badge badge-red">${c}</span>`).join('')}</div>
+    </div>`;
+  }
+  if (!good.length && !avoid.length) {
+    body += `<span class="badge badge-green">All crops suitable for rotation</span>`;
+  }
+  return card('Crop Rotation', '🔄', body);
+}
+
+// ─── Pests Card ───────────────────────────────────────────────────────────────
+
+function pestsCard(pests) {
+  const sevMap = { high: 'badge-red', medium: 'badge-orange', low: 'badge-green' };
+  let body = '';
+  if (!pests.length) {
+    body = '<span class="badge badge-green">No significant threats detected</span>';
+  } else {
+    pests.slice(0, 4).forEach(t => {
+      const cls = sevMap[t.severity] || 'badge-blue';
+      body += `<div class="pest-item">
+        <div class="pest-sev"><span class="badge ${cls}">${t.severity}</span></div>
+        <div>
+          <div class="pest-name">${t.name}</div>
+          <div class="pest-reason">${t.reason || ''}</div>
+        </div>
+      </div>`;
+    });
+  }
+  return card('Pest &amp; Disease Risk', '🐛', body);
+}
+
+// ─── Fertilizer Card ──────────────────────────────────────────────────────────
+
+function fertCard(fert) {
+  const el = document.getElementById('fert-card');
+  const keys = ['N', 'P', 'K', 'ph'];
+  const labels = { N: 'Nitrogen (N)', P: 'Phosphorus (P)', K: 'Potassium (K)', ph: 'pH' };
+  const actionColor = { add: 'var(--orange)', excess: 'var(--red)', ok: 'var(--green)' };
+
+  let rows = '';
+  keys.forEach(k => {
+    const f = fert[k] || {};
+    const gap    = f.gap    != null ? (f.gap > 0 ? '+' : '') + Number(f.gap).toFixed(1) : '—';
+    const unit   = f.unit   || '';
+    const action = f.action || '—';
+    const rec    = f.recommendation || '—';
+    const color  = actionColor[action] || 'var(--muted)';
+    rows += `<tr>
+      <td>${labels[k] || k}</td>
+      <td>${f.current ?? '—'} ${unit}</td>
+      <td>${f.optimal ?? '—'} ${unit}</td>
+      <td style="color:${color};font-weight:600">${gap} ${unit}</td>
+      <td><span class="badge ${action === 'add' ? 'badge-orange' : action === 'excess' ? 'badge-red' : 'badge-green'}">${action}</span></td>
+      <td style="color:var(--muted);font-size:.82rem">${rec}</td>
+    </tr>`;
+  });
+
+  el.innerHTML = `
+    <table class="fert-table">
+      <thead><tr>
+        <th>Nutrient</th><th>Current</th><th>Optimal</th><th>Gap</th><th>Action</th><th>Recommendation</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const active = document.activeElement;
+    const ids = ['inp-location', 'inp-month', 'inp-prev'];
+    if (ids.includes(active.id)) submitForm();
+  }
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+loadSummary();
+</script>
+</body>
+</html>

@@ -33,10 +33,16 @@ def _data_hash(df: pd.DataFrame) -> str:
 
 
 def _save_model_cache(trained, best_name, scaler, le, accuracies, data_hash):
-    payload = dict(trained=trained, best_name=best_name,
+    # Exclude Neural Network from pickle — save its weights separately with torch
+    trained_pkl = {k: v for k, v in trained.items() if k != "Neural Network"}
+    payload = dict(trained=trained_pkl, best_name=best_name,
                    scaler=scaler, le=le, accuracies=accuracies)
     with open(_MODEL_CACHE_FILE, "wb") as f:
         pickle.dump(payload, f)
+    # Save NN weights separately if available
+    nn = trained.get("Neural Network")
+    if nn and getattr(nn, "available", False) and _TORCH_AVAILABLE:
+        torch.save(nn.model.state_dict(), _MODEL_CACHE_FILE + ".nn.pt")
     with open(_DATA_HASH_FILE, "w") as f:
         f.write(data_hash)
 
@@ -52,7 +58,24 @@ def _load_model_cache(data_hash: str):
     try:
         with open(_MODEL_CACHE_FILE, "rb") as f:
             p = pickle.load(f)
-        return p["trained"], p["best_name"], p["scaler"], p["le"], p["accuracies"]
+        trained    = p["trained"]
+        best_name  = p["best_name"]
+        scaler     = p["scaler"]
+        le         = p["le"]
+        accuracies = p["accuracies"]
+        # Rebuild NN wrapper and reload weights if saved
+        nn_path = _MODEL_CACHE_FILE + ".nn.pt"
+        nn_acc  = accuracies.get("Neural Network", 0)
+        nn_wrap = NeuralNetWrapper(input_dim=len(FEATURES), num_classes=len(le.classes_))
+        if os.path.isfile(nn_path) and _TORCH_AVAILABLE:
+            CropNet.input_dim   = len(FEATURES)
+            CropNet.num_classes = len(le.classes_)
+            nn_wrap.model = CropNet()
+            nn_wrap.model.load_state_dict(torch.load(nn_path, weights_only=True))
+            nn_wrap.model.eval()
+            nn_wrap.available = True
+        trained["Neural Network"] = nn_wrap
+        return trained, best_name, scaler, le, accuracies
     except Exception:
         return None
 
@@ -195,26 +218,38 @@ def build_training_data() -> pd.DataFrame:
 
 # ── Neural Network (PyTorch) ──────────────────────────────────────────────────
 
+try:
+    import torch
+    import torch.nn as nn
+
+    class CropNet(nn.Module):
+        """4-layer MLP for crop classification."""
+        input_dim   = 7   # set before instantiation
+        num_classes = 33  # set before instantiation
+
+        def __init__(self):
+            super().__init__()
+            self.net = nn.Sequential(
+                nn.Linear(CropNet.input_dim, 64),  nn.ReLU(), nn.Dropout(0.2),
+                nn.Linear(64, 128),                nn.ReLU(), nn.Dropout(0.2),
+                nn.Linear(128, 64),                nn.ReLU(),
+                nn.Linear(64, CropNet.num_classes)
+            )
+        def forward(self, x):
+            return self.net(x)
+
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
+    CropNet = None
+
+
 def _build_nn(input_dim: int, num_classes: int):
-    try:
-        import torch
-        import torch.nn as nn
-
-        class CropNet(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.net = nn.Sequential(
-                    nn.Linear(input_dim, 64), nn.ReLU(), nn.Dropout(0.2),
-                    nn.Linear(64, 128),       nn.ReLU(), nn.Dropout(0.2),
-                    nn.Linear(128, 64),       nn.ReLU(),
-                    nn.Linear(64, num_classes)
-                )
-            def forward(self, x):
-                return self.net(x)
-
-        return CropNet, torch, nn
-    except ImportError:
+    if not _TORCH_AVAILABLE:
         return None, None, None
+    CropNet.input_dim   = input_dim
+    CropNet.num_classes = num_classes
+    return CropNet, torch, nn
 
 
 class NeuralNetWrapper:
